@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width" initial-scale="1.0" maximum-scale="1.0"></meta>
+    <title>Googleカレンダーで去年の予定を横に並べて表示してくれるやつ</title>
+    <meta name="description" content="Googleカレンダーで去年の予定を横に並べて表示してくれるやつです。便利です。"></meta>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.3.0/ical.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" />
+    <style media="screen">
+      h1.ui.huge.header { font-size: 5em; }
+      @media only screen and (max-width: 767px) {
+        h1.ui.huge.header { font-size: 3.5em; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="ui centered grid">
+        <div class="fifteen wide tablet mobile ten wide computer column">
+          <div class="ui basic segment">
+            <h1 class="ui huge header">Googleカレンダーで去年の予定を横に並べて表示してくれるやつ</h1>
+            <div class="ui hidden divider"></div>
+            <div class="ui action fluid input">
+              <input id="input" type="file" name="files">
+              <a id="download" href="#" download="2019.ics" class="ui red disabled button">
+                <i class="icon download"></i>
+                出力
+              </a>
+            </div>
+            <br>
+            <div class="ui message">
+              <div class="content">
+                <i class="icon chevron right"></i>
+                詳しい使い方などは
+                <a href="#" target="_blank">こちら</a>
+                。
+              </div>
+            </div>
+          </div>
+          <div class="ui divider"></div>
+          <footer class="ui center aligned basic segment">
+            Made for 💩 by
+            <a href="https://notsobad.jp" target="_blank">NOT SO BAD, LLC.</a>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      $(function(){
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+          // Great success! All the File APIs are supported.
+        } else {
+          alert('The File APIs are not fully supported in this browser.');
+        }
+
+        $("#input").on('change', function(){
+          let file = $("#input")[0].files[0];
+
+          var reader = new FileReader();
+          reader.addEventListener("load",function(e){
+            var result = reader.result;
+            var jcalData = ICAL.parse(result);
+            var vcalendar = new ICAL.Component(jcalData);
+            var events = vcalendar.getAllSubcomponents('vevent');
+
+            var newCal = new ICAL.Component(['vcalendar', [], []]);
+            for(var i=0; i<events.length; i++) {
+              var event = events[i];
+              var dtstart = event.getFirstPropertyValue('dtstart').toString();
+              if(dtstart.slice(0,4)!='2019') { continue; } // 2019年のデータ以外はスキップ
+              newDtstart = '2020' + dtstart.slice(4);
+              var dtend = event.getFirstPropertyValue('dtend').toString();
+              newDtend = '2020' + dtend.slice(4);
+              event.updatePropertyWithValue('dtstart', newDtstart);
+              event.updatePropertyWithValue('dtend', newDtend);
+              newCal.addSubcomponent(event);
+            }
+            var ics = newCal.toString();
+            var blob = new Blob([ ics ], { "type" : "text/ics" });
+            var download = document.getElementById("download");
+            download.href = window.URL.createObjectURL(blob);
+            download.classList.remove('disabled');
+          });
+          reader.readAsText(file);
+        });
+      });
+    </script>
+  </body>
+</html>
